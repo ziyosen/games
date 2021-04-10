@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+    <link rel="manifest" href="manifest.webmanifest">
+    <!-- <link rel="modulepreload" href="worker.js"> -->
+    <title>Gamedev Canvas Workshop</title>
+    <style>
+    	* { padding: 0; margin: 0; }
+      html, body, canvas { background: #2C3E50; }
+      html, body { height: 100vh; display: flex; justify-content: center; align-items: center; }
+    	canvas { outline: 1px solid #fff; display: block; margin: 0 auto; }
+
+      @media (orientation: landscape) {
+        canvas {
+          height: min(98vh, 98vw);
+          max-width: max(98vh, 98vw);
+        }
+      }
+      @media (orientation: portrait) {
+        canvas {
+          width: 100vw;
+        }
+      }
+
+      /* ['#1abc9c', '#2ecc71', '#3498db', '#e74c3c', '#9b59b6']; */
+    </style>
+</head>
+<body>
+
+<canvas id="canvas" width="1400" height="800"></canvas>
+
+<script type="module">
+  const canvas = document.getElementById("canvas");
+  // const gamepad = Gamepad.create();
+
+
+  // const ball = Ball.create(10, 10, 10, Vector.create(2, 5));
+  // const box = Box.create(canvas.width / 2, canvas.height - 10, 100, 20);
+  // const box2 = Box.create(canvas.width / 2, canvas.height / 2, 40, 200);
+  // const box3 = Box.create(canvas.width / 2, 10, 100, 20);
+  // entities.push(ball) // , box, box2, box3);
+  // var busy = false;
+
+  const offscreen = canvas.transferControlToOffscreen();
+  const worker = new Worker('worker.js', { type: 'module' });
+  worker.postMessage({ type: 'INIT', entities: [], canvas: offscreen }, [offscreen]);
+  // worker.addEventListener('message', (e) => {
+  //   busy = false;
+  //   // ctx.clearRect(0, 0, canvas.width, canvas.height);
+  //   // ctx.fillStyle = 'rgba(250, 250, 250, 0.5)';
+  //   // ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  //   ball.velocity = e.data[0];
+  //   // ball.velocity.addTo(Vector.create(0, .1)); // gravity
+  //   // entities.forEach(entity => { entity.update(ctx) });
+  //   // entities.forEach(entity => { entity.render(ctx) });
+  //   // debug(...entities);
+  // });
+
+  if (window.screen.orientation.lock) {
+    window.screen.orientation.lock('portrait')
+      .catch(e => console.warn(e));
+  }
+</script>
+
+</body>
+</html>
