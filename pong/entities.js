@@ -12,47 +12,7 @@ export class Ball {
     ctx.fill();
     ctx.closePath();
   }
-  update = (ctx, boxes = []) => {
-    // TODO: change position, check, fix if bouncing, update velocity
-    // need to fix: x,y should be always integer!!!
-    const next = this.position.add(this.velocity);
 
-    if(next.x > ctx.canvas.width - this.r || next.x < this.r) {
-      this.velocity.x = this.velocity.x * -1 //-.9;
-    }
-    else if(next.y > ctx.canvas.height - this.r || next.y < this.r) {
-      // this.position.y = ctx.canvas.height - this.r;
-      this.velocity.y = this.velocity.y * -1 //-.9;
-    }
-    else {
-      for (let i = 0; i < boxes.length; i++) {
-        const box = boxes[i];
-        const dx = Math.abs(next.x - box.position.x) - box.width / 2;
-        const dy = Math.abs(next.y - box.position.y) - box.height / 2;
-
-        if (box.hitTest({ x: next.x - ball.r, y: next.y - this.r, width: this.r * 2, height: this.r * 2 })) {
-          if (i === 0 && navigator.getGamepads()[0]) {
-            if (navigator.getGamepads()[0].vibrationActuator) {
-              navigator.getGamepads()[0].vibrationActuator.playEffect('dual-rumble', { duration: 100, startDelay: 0, strongMagnitude: .1, weakMagnitude: 1 })
-            }
-          }
-          if (dx > dy) {
-            // this.position.x = box.position.x < this.position.x ?
-            //   box.position.x + box.width / 2 + ball.r: box.position.x - box.width / 2 - ball.r; // magic numbers
-            //
-            this.velocity.x = this.velocity.x * -1.05;
-          } else {
-            // this.position.y = box.position.y - box.height / 2;
-            this.velocity.y = this.velocity.y * -1.05;
-          }
-          // xDist < ball.r && yDist < 0 || yDist < ball.r && xDist < 0 || xDist**2 + yDist**2 < ball.r**2
-          break;
-        }
-      }
-    }
-
-    this.position.addTo(this.velocity);
-  }
   getRect = () => {
     return {
       x: this.position.x - this.r,
