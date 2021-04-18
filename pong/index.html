@@ -3,14 +3,53 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+
     <link rel="manifest" href="manifest.webmanifest">
-    <!-- <link rel="modulepreload" href="worker.js"> -->
+    <link rel="modulepreload" href="worker.js">
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+
     <title>Games: Pong</title>
     <style>
+      :root {
+        --main-bg-color: #2C3E50; ;
+      }
+
     	* { padding: 0; margin: 0; }
-      html, body, canvas { background: #2C3E50; }
+      html, body, canvas { background: var(--main-bg-color); }
       html, body { height: 100vh; display: flex; justify-content: center; align-items: center; }
-    	canvas { outline: 1px solid #fff; display: block; margin: 0 auto; }
+
+      canvas {
+        display: block;
+        margin: 0 auto;
+        outline: 1px solid #fff;
+        background-image:
+          repeating-linear-gradient(0deg, #fffa, #fffa 10px, transparent 10px, transparent 20px);
+        background-size: 10px 700px;
+        background-repeat: no-repeat;
+        background-position: center;
+      }
+
+      .score, .prompt {
+        position: absolute;
+        font-family: 'VT323', monospace;
+        font-size: 2.4em;
+        color: #fff;
+        pointer-events: none;
+      }
+
+      .prompt {
+        background: var(--main-bg-color);
+        padding: 1.1em;
+      }
+
+      .score {
+        top: 5%;
+        width: 80%;
+        display: flex;
+        justify-content: space-between;
+      }
 
       @media (orientation: landscape) {
         canvas {
@@ -24,47 +63,56 @@
         }
       }
 
-      /* ['#1abc9c', '#2ecc71', '#3498db', '#e74c3c', '#9b59b6']; */
+      /* ['#2c3e50', '#1abc9c', '#3498db', '#e74c3c', '#9b59b6']; */
     </style>
 </head>
 <body>
 
-<canvas id="canvas" width="1400" height="800"></canvas>
+  <div class="score">
+    <div class="score-player1">0</div>
+    <div class="score-player2">0</div>
+  </div>
 
-<script type="module">
-  const canvas = document.getElementById("canvas");
-  // const gamepad = Gamepad.create();
+  <div class="prompt">Press any key to start</div>
 
+  <canvas id="canvas" width="1400" height="800"></canvas>
 
-  // const ball = Ball.create(10, 10, 10, Vector.create(2, 5));
-  // const box = Box.create(canvas.width / 2, canvas.height - 10, 100, 20);
-  // const box2 = Box.create(canvas.width / 2, canvas.height / 2, 40, 200);
-  // const box3 = Box.create(canvas.width / 2, 10, 100, 20);
-  // entities.push(ball) // , box, box2, box3);
-  // var busy = false;
+  <script type="module">
+    const canvas = document.getElementById("canvas");
+    // const gamepad = Gamepad.create();
 
-  const offscreen = canvas.transferControlToOffscreen();
-  const worker = new Worker('worker.js', { type: 'module' });
-  const config = {};
-  worker.postMessage({ type: 'INIT', config, canvas: offscreen }, [offscreen]);
-  // worker.addEventListener('message', (e) => {
-  //   busy = false;
-  //   // ctx.clearRect(0, 0, canvas.width, canvas.height);
-  //   // ctx.fillStyle = 'rgba(250, 250, 250, 0.5)';
-  //   // ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const offscreen = canvas.transferControlToOffscreen();
+    const worker = new Worker('worker.js', { type: 'module' });
+    const config = {};
 
-  //   ball.velocity = e.data[0];
-  //   // ball.velocity.addTo(Vector.create(0, .1)); // gravity
-  //   // entities.forEach(entity => { entity.update(ctx) });
-  //   // entities.forEach(entity => { entity.render(ctx) });
-  //   // debug(...entities);
-  // });
+    worker.postMessage({ type: 'INIT', config, canvas: offscreen }, [offscreen]);
 
-  if (window.screen.orientation.lock) {
-    window.screen.orientation.lock('portrait')
-      .catch(e => console.warn(e));
-  }
-</script>
+    const scorePlayer1 = document.querySelector('.score-player1');
+    const scorePlayer2 = document.querySelector('.score-player2');
+    const prompt = document.querySelector(`.prompt`);
+
+    worker.addEventListener('message', (e) => {
+      switch (e.data.type) {
+        case 'SCORE':
+          scorePlayer1.textContent = e.data.score[0];
+          scorePlayer2.textContent = e.data.score[1];
+          break;
+        case 'PAUSE':
+          if (e.data.isPaused) {
+            prompt.style.visibility = 'visible';
+            prompt.textContent = 'Pause';
+          } else {
+            prompt.style.visibility = 'hidden';
+          }
+          break;
+      }
+    });
+
+    if (window.screen.orientation.lock) {
+      window.screen.orientation.lock('portrait')
+        .catch(e => console.warn(e));
+    }
+  </script>
 
 </body>
 </html>

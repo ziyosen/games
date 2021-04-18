@@ -3,138 +3,142 @@ import { Ball, Box } from './entities.js';
 
 export const INIT = 'INIT';
 export const PAUSE = 'PAUSE';
-export const RESUME = 'RESUME';
+export const SCORE = 'SCORE';
 
-// const debug = (...targets) => {
-//   ctx.beginPath();
-//   targets.forEach(target => {
-//     const rect = target.getRect();
-//     ctx.fillStyle = 'rgba(250, 250, 250, 0.4)';
-//     ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
-//   });
-//   ctx.closePath();
-// }
+const config = {
+  hitForce: 1.1,
+  wallFriction: .1,
+}
 
-const init = ({ canvas, config }) => {
+const state = {
+  score: [0, 0],
+  isPaused: false,
+}
+
+const init = ({ canvas }) => {
   const ctx = canvas.getContext("2d");
-  // ctx.imageSmoothingEnabled = false;
+  ctx.imageSmoothingEnabled = false;
 
   const entities = [];
 
+  const debug = () => {
+    ctx.beginPath();
+    entities.forEach(target => {
+      const rect = target.getRect();
+      ctx.fillStyle = 'rgba(250, 250, 0, 0.4)';
+      ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+      ctx.moveTo(target.position.x, target.position.y);
+      ctx.lineTo(target.position.x + target.velocity.x, target.position.y + target.velocity.y);
+      ctx.stroke();
+    });
+    ctx.closePath();
+  }
+
   const render = (time) => {
-    // ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = 'rgba(44, 62, 80, .9)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    update(entities);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // ctx.fillStyle = 'rgba(44, 62, 80, .9)';
+    // ctx.fillRect(0, 0, canvas.width, canvas.height);
+    update();
     entities.forEach(entity => { entity.render(ctx) });
+    // debug();
     requestAnimationFrame(render);
   }
 
   const update = () => {
-    // TODO: change position, check, fix if bouncing, update velocity
-    // need to fix: x,y should be always integer!!!
-    entities.forEach(entity => {
-      const next = entity.position.add(entity.velocity);
-      entity.position.addTo(entity.velocity);
+    // # Walls bouncing
+    // Slow down the ball when hit the wall
+    const ball = entities[0];
+    const next = ball.position.add(ball.velocity);
 
-      if(next.x > ctx.canvas.width - entity.r || next.x < entity.r) {
-        entity.velocity.x = entity.velocity.x * -1 // -.9;
+    if(next.x > ctx.canvas.width - ball.r || next.x < ball.r) {
+      ball.position.x = (next.x < ball.r) ? ball.r : ctx.canvas.width - ball.r;
+      ball.velocity.x = ball.velocity.x * -.9;
+
+      if (next.x < ball.r) {
+        state.score[1]++;
+      } else {
+        state.score[0]++;
       }
-
-      if(next.y > ctx.canvas.height - entity.r || next.y < entity.r) {
-        // this.position.y = ctx.canvas.height - this.r;
-        entity.velocity.y = entity.velocity.y * -1 // -.9;
-      }
-    });
-
-    for (let i = 1; i < entities.length; i++) {
-      const box = entities[i];
-      const next = box.position.add(box.velocity);
-      const dx = Math.abs(next.x - box.position.x) - box.width / 2;
-      const dy = Math.abs(next.y - box.position.y) - box.height / 2;
-
-      if (box.hitTest({ x: next.x - entities[0].r, y: next.y - entities[0].r, width: entities[0].r * 2, height: entities[0].r * 2 })) {
-        // if (i === 0 && navigator.getGamepads()[0]) {
-        //   if (navigator.getGamepads()[0].vibrationActuator) {
-        //     navigator.getGamepads()[0].vibrationActuator.playEffect('dual-rumble', { duration: 100, startDelay: 0, strongMagnitude: .1, weakMagnitude: 1 })
-        //   }
-        // }
-        if (dx > dy) {
-          // this.position.x = box.position.x < this.position.x ?
-          //   box.position.x + box.width / 2 + ball.r: box.position.x - box.width / 2 - ball.r; // magic numbers
-          //
-          box.velocity.x = entities[0].velocity.x * -1.05;
-        } else {
-          // this.position.y = box.position.y - box.height / 2;
-          box.velocity.y = entities[0].velocity.y * -1.05;
-        }
-        // xDist < ball.r && yDist < 0 || yDist < ball.r && xDist < 0 || xDist**2 + yDist**2 < ball.r**2
-        break;
-      }
+      self.postMessage({ type: SCORE, score: state.score });
     }
+    else if(next.y > ctx.canvas.height - ball.r || next.y < ball.r) {
+      ball.position.y = (next.y < ball.r) ? ball.r : ctx.canvas.height - ball.r;
+      ball.velocity.y = ball.velocity.y * -.9;
+    }
+
+    // # Paddle bouncing
+    // Speed up the ball when hit the paddle
+    const inersect = (p0, p1, p2, p3) => {
+      const A1 = p1.y - p0.y;
+      const B1 = p0.x - p1.x;
+      const C1 = A1 * p0.x + B1 * p0.y;
+      const A2 = p3.y - p2.y;
+      const B2 = p2.x - p3.x;
+      const C2 = A2 * p2.x + B2 * p2.y;
+      const denominator = A1 * B2 - A2 * B1;
+
+      if (denominator === 0) {
+        return null;
+      }
+
+      const intersetX = (B2 * C1 - B1 * C2) / denominator;
+      const intersetY = (A1 * C2 - A2 * C1) / denominator;
+      const rx0 = (intersetX - p0.x) / (p1.x - p0.x);
+      const ry0 = (intersetY - p0.y) / (p1.y - p0.y);
+      const rx1 = (intersetX - p2.x) / (p3.x - p2.x);
+      const ry1 = (intersetY - p2.y) / (p3.y - p2.y);
+
+      if (((rx0 >= 0 && rx0 <= 1) || (ry0 >= 0 && ry0 <= 1)) &&
+          ((rx1 >= 0 && rx1 <= 1) || (ry1 >= 0 && ry1 <= 1))) {
+        return { x: intersetX, y: intersetY }
+      }
+    };
+
+    const rect1 = entities[1].getRect();
+    const rect2 = entities[2].getRect();
+    rect1.x = rect1.x + rect1.width;
+    const inersectPoint1 = inersect(ball.position, next, rect1, { x: rect1.x, y: rect1.y + rect1.height });
+    const inersectPoint2 = inersect(ball.position, next, rect2, { x: rect2.x, y: rect2.y + rect2.height });
+
+    if (inersectPoint1) {
+      ball.position.x = inersectPoint1.x + ball.r;
+      ball.velocity.x = ball.velocity.x * -1 * config.hitForce;
+      ball.velocity.addTo(entities[1].velocity);
+    }
+    if (inersectPoint2) {
+      ball.position.x = inersectPoint2.x - ball.r;
+      ball.velocity.x = ball.velocity.x * -1 * config.hitForce;
+      ball.velocity.addTo(entities[2].velocity);
+    }
+
+    ball.position.addTo(ball.velocity);
+
+    entities[1].position.addTo(entities[1].velocity);
+    entities[2].position.addTo(entities[2].velocity);
   }
 
-  entities[0] = Ball.create({ position: Vector.create(400, 400), velocity: Vector.create(10, 10), r: 10 });
-  entities[1] = Box.create({ position: Vector.create(20, 400), width: 10, height: 100 });
-  entities[2] = Box.create({ position: Vector.create(1380, 400), width: 10, height: 100 });
+  // entities[0] = Ball.create({ position: Vector.create(500, 200), velocity: Vector.create(5, 2), r: 10 });
+  entities[0] = Ball.create({ position: Vector.create(500, 200), velocity: Vector.create(5, 2), r: 10 });
+  entities[1] = Box.create({ position: Vector.create(20, 400), width: 20, height: 120 });
+  entities[2] = Box.create({ position: Vector.create(1380, 0), width: 20, height: 100 });
 
   requestAnimationFrame(render);
 }
 
-// const gravity = Vector.create(0, .1);
-// let prevFrame = Date.now();
-// var a = 50;
-// var v =  Vector.create(1, 0);
-// var p =  Vector.create(0, 0);
-// let canvas = null;
-
-// self.addEventListener('message',
-self.onmessage = e => {
-  const { type, config, canvas } = e.data;
-  console.log(e.data)
-  init({ config: e.data.config, canvas: e.data.canvas });
-  // switch (type) {
-  //   case INIT:
-  //     console.log('asdasd')
-  //     return init({ config, canvas });
-  //   case PAUSE:
-  //     return true;
-  //   case RESUME:
-  //     return true;
+const pause = () => {
+  if (state.isPaused) {
+    state.isPaused = false;
+  } else {
+    state.isPaused = true;
   }
+  self.postMessage({ type: PAUSE, isPaused: state.isPaused });
+}
 
-  // const elapsedTime = (Date.now() - prevFrame) / (1000 / 60);
-  // prevFrame = Date.now();
-  // const entities = e.data.entities;
-  // if (e.data.canvas) {
-  //   canvas = e.data.canvas;
-  // }
-
-  //entities[0] = Vector.create(entities[0].x, entities[0].y).add(gravity)); // gravity
-  // if (a > 0) {
-  //   for (let i = 0; i < 1000000000; i++) {
-  //     Math.sqrt(i);
-  //   }
-  // }
-  // a--;
-
-  // function render(time) {
-    // v = v.add(gravity);
-    // p.addTo(v);
-
-  //   requestAnimationFrame(render);
-  // }
-  // requestAnimationFrame(render);
-
-  // postMessage(entities);
-
-  // ball.velocity.addTo(Vector.create(0, .1)); // gravity
-  // box.velocity.x = controller.dpad1.x * 5;
-  // // box.velocity.addTo(Vector.create(controller.dpad1.x * .2, 0));
-  // // box.velocity.y = controller.direction.y * 10;
-  // box3.velocity.x = controller.dpad2.x * 5;
-  // // ball.velocity = ball.velocity.multiply(.99);
-  // box.update(ctx); // user input first
-  // box3.update(ctx);
-  // ball.update(ctx, [ box, box2, box3 ])
-// });
+self.addEventListener('message', (e) => {
+  switch (e.data.type) {
+    case INIT:
+      return init({ config: e.data.config, canvas: e.data.canvas });
+    case PAUSE:
+      return pause();
+  }
+});
