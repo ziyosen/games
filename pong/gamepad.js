@@ -1,4 +1,6 @@
-class Controller {
+import Vector from './vector.js';
+
+class Gamepad {
   static #instance = null;
   #dpad1 = Vector.create(0, 0);
   #dpad2 = Vector.create(0, 0);
@@ -52,11 +54,13 @@ class Controller {
     }, false);
   }
 
-  static create() {
-    if (this.#instance) return this.#instance;
+  // static create() {
+  //   if (this.#instance) return this.#instance;
 
-    this.#instance = new Controller();
-    this.#instance.#init();
-    return this.#instance;
-  }
+  //   this.#instance = new Gamepad();
+  //   this.#instance.#init();
+  //   return this.#instance;
+  // }
 }
+
+export default Gamepad;
