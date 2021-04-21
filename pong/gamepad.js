@@ -1,16 +1,18 @@
+import { GAMEPAD_UPDATE, STATUS_UPDATE } from './worker.js';
+
 export default class Gamepad {
   dpad1 = [0, 0];
   dpad2 = [0, 0];
 
   init(worker) {
-    const scanGamepadState = () => {
+    const scanGamepadsState = () => {
       const gamepads = navigator.getGamepads();
       const { dpad1, dpad2 } = this;
 
       if (gamepads[0]) {
         if (gamepads[0].id.includes('Joy-Con (L)')) {
           dpad1[0] = gamepads[0].axes[1];
-          dpad1[1] = gamepads[0].axes[0] * -1;
+          dpad1[1] = gamepads[0].axes[0];
         }
         else if (gamepads[0].id.includes('Joy-Con (R)')) {
           dpad2[0] = gamepads[0].axes[1];
@@ -22,26 +24,29 @@ export default class Gamepad {
           dpad2[0] = gamepads[0].axes[2];
           dpad2[1] = gamepads[0].axes[3];
         }
-
+      } else if (gamepads[1]) {
+        if (gamepads[1].id.includes('Joy-Con (L)')) {
+          dpad1[0] = gamepads[1].axes[0];
+          dpad1[1] = gamepads[1].axes[1];
+        }
+        else if (gamepads[1].id.includes('Joy-Con (R)')) {
+          dpad2[0] = gamepads[1].axes[0];
+          dpad2[1] = gamepads[1].axes[1];
+        }
       }
 
-      // if (gamepads[1]) {
-      //   dpad2[0] = gamepads[1].axes[1];
-      //   dpad2[1] = gamepads[1].axes[0];
-      // }
-
-      worker.postMessage({ type: 'GAMEPAD_UPDATE', dpad1, dpad2 });
-      requestAnimationFrame(scanGamepadState);
+      worker.postMessage({ type: GAMEPAD_UPDATE, dpad1, dpad2 });
+      requestAnimationFrame(scanGamepadsState);
     };
 
-    scanGamepadState();
+    scanGamepadsState();
 
-    window.addEventListener("gamepadconnected", (e) => {
-      console.log(`Gamepad${e.gamepad.index + 1} connected`)
+    window.addEventListener("gamepadconnected", () => {
+      worker.postMessage({ type: STATUS_UPDATE, message: 'Gamepad connected' });
     });
 
-    window.addEventListener("gamepaddisconnected", (e) => {
-      console.log(`Gamepad${e.gamepad.index + 1} disconnected`)
+    window.addEventListener("gamepaddisconnected", () => {
+      worker.postMessage({ type: STATUS_UPDATE, message: 'Gamepad disconnected' });
     });
 
     window.addEventListener('keydown', (e) => {

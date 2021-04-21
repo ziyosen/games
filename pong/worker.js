@@ -5,6 +5,7 @@ export const INIT = 'INIT';
 export const PAUSE = 'PAUSE';
 export const SCORE = 'SCORE';
 export const GAMEPAD_UPDATE = 'GAMEPAD_UPDATE';
+export const STATUS_UPDATE = 'STATUS_UPDATE';
 
 const config = {
   hitForce: 1.1, // force to speed up the ball when it hits the paddle
@@ -48,24 +49,18 @@ const pause = () => {
   self.postMessage({ type: PAUSE, isPaused: state.isPaused });
 }
 
-const gamepadUpdate = ({ dpad1, dpad2 }) => {
+const updateControls = ({ dpad1, dpad2 }) => {
   controls.dpad1.x = dpad1[0];
   controls.dpad1.y = dpad1[1];
   controls.dpad2.x = dpad2[0];
   controls.dpad2.y = dpad2[1];
 }
 
-const render = (time) => {
-  state.ctx.clearRect(0, 0, state.ctx.canvas.width, state.ctx.canvas.height);
-  // ctx.fillStyle = 'rgba(44, 62, 80, .9)';
-  // ctx.fillRect(0, 0, canvas.width, canvas.height);
-  update();
-  entities.forEach(entity => { entity.render(state.ctx) });
-  // debug();
-  requestAnimationFrame(render);
+const updateStatus = ({ message }) => {
+  self.postMessage({ type: STATUS_UPDATE, message });
 }
 
-const update = (elapsedTime = 0) => {
+const updateGame = (elapsedTime = 0) => {
   const ctx = state.ctx;
   const ball = entities[0];
   const next = ball.position.add(ball.velocity);
@@ -162,6 +157,16 @@ const update = (elapsedTime = 0) => {
   ball.position.addTo(ball.velocity);
 }
 
+const render = (time) => {
+  state.ctx.clearRect(0, 0, state.ctx.canvas.width, state.ctx.canvas.height);
+  // ctx.fillStyle = 'rgba(44, 62, 80, .9)';
+  // ctx.fillRect(0, 0, canvas.width, canvas.height);
+  updateGame();
+  entities.forEach(entity => { entity.render(state.ctx) });
+  // debug();
+  requestAnimationFrame(render);
+}
+
 const init = ({ canvas }) => {
   state.ctx = canvas.getContext("2d");
   state.ctx.imageSmoothingEnabled = false;
@@ -180,6 +185,8 @@ self.addEventListener('message', (e) => {
     case PAUSE:
       return pause();
     case GAMEPAD_UPDATE:
-      return gamepadUpdate({ dpad1: e.data.dpad1, dpad2: e.data.dpad2 });
+      return updateControls({ dpad1: e.data.dpad1, dpad2: e.data.dpad2 });
+    case STATUS_UPDATE:
+      return updateStatus({ message: e.data.message });
   }
 });

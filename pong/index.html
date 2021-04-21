@@ -98,12 +98,14 @@
       <div class="score-player2">0</div>
     </div>
 
-    <div class="prompt">Press any key to start</div>
-    <div class="status">Loading...</div>
+    <div class="prompt"></div>
+    <div class="status"></div>
   </div>
 
   <script type="module">
     import Gamepad from './gamepad.js';
+    import { SCORE, PAUSE, STATUS_UPDATE } from './worker.js';
+
     const canvas = document.querySelector('canvas');
     const offscreen = canvas.transferControlToOffscreen();
     const worker = new Worker('worker.js', { type: 'module' });
@@ -119,17 +121,25 @@
 
     worker.addEventListener('message', (e) => {
       switch (e.data.type) {
-        case 'SCORE':
+        case SCORE:
           scorePlayer1.textContent = e.data.score[0];
           scorePlayer2.textContent = e.data.score[1];
           break;
-        case 'PAUSE':
+        case PAUSE:
           if (e.data.isPaused) {
             prompt.style.visibility = 'visible';
             prompt.textContent = 'Pause';
           } else {
             prompt.style.visibility = 'hidden';
           }
+          break;
+        case STATUS_UPDATE:
+          status.textContent = e.data.message;
+          status.style.visibility = 'visible';
+          setTimeout(() => {
+            status.textContent = '';
+            status.style.visibility = 'hidden';
+          }, 3000)
           break;
       }
     });
