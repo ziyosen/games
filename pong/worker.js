@@ -1,29 +1,30 @@
 import Vector from './vector.js';
-import Gamepad from './gamepad.js';
 import { Ball, Box } from './entities.js';
 
 export const INIT = 'INIT';
 export const PAUSE = 'PAUSE';
 export const SCORE = 'SCORE';
-// export const SCORE = 'SCORE';
+export const GAMEPAD_UPDATE = 'GAMEPAD_UPDATE';
 
 const config = {
-  hitForce: 1.1,
-  wallFriction: .1,
-  paddleMaxSpeed: 10,
+  hitForce: 1.1, // force to speed up the ball when it hits the paddle
+  wallFriction: .1, // friction to slow down the when it hits the wall
+  paddleMaxSpeed: 10, // max speed of the paddle
+  paddleSpeedTransfer: .3, // percent of the paddle's speed transfered to the ball after a hit
 }
 
 const state = {
   ctx: null,
   score: [0, 0],
   isPaused: false,
-  gampad: {
-    dpad1: Vector.create(0, 0),
-    dpad2: Vector.create(0, 0)
-  },
 }
 
 const entities = [];
+
+const controls = {
+  dpad1: Vector.create(0, 0),
+  dpad2: Vector.create(0, 0),
+};
 
 const debug = () => {
   ctx.beginPath();
@@ -47,6 +48,13 @@ const pause = () => {
   self.postMessage({ type: PAUSE, isPaused: state.isPaused });
 }
 
+const gamepadUpdate = ({ dpad1, dpad2 }) => {
+  controls.dpad1.x = dpad1[0];
+  controls.dpad1.y = dpad1[1];
+  controls.dpad2.x = dpad2[0];
+  controls.dpad2.y = dpad2[1];
+}
+
 const render = (time) => {
   state.ctx.clearRect(0, 0, state.ctx.canvas.width, state.ctx.canvas.height);
   // ctx.fillStyle = 'rgba(44, 62, 80, .9)';
@@ -58,31 +66,13 @@ const render = (time) => {
 }
 
 const update = (elapsedTime = 0) => {
-  // # Walls bouncing
-  // Slow down the ball when hit the wall
   const ctx = state.ctx;
   const ball = entities[0];
   const next = ball.position.add(ball.velocity);
 
-  if(next.x > ctx.canvas.width - ball.r || next.x < ball.r) {
-    ball.position.x = (next.x < ball.r) ? ball.r : ctx.canvas.width - ball.r;
-    ball.velocity.x = ball.velocity.x * -.9;
-
-    if (next.x < ball.r) {
-      state.score[1]++;
-    } else {
-      state.score[0]++;
-    }
-    self.postMessage({ type: SCORE, score: state.score });
-  }
-  else if(next.y > ctx.canvas.height - ball.r || next.y < ball.r) {
-    ball.position.y = (next.y < ball.r) ? ball.r : ctx.canvas.height - ball.r;
-    ball.velocity.y = ball.velocity.y * -.9;
-  }
-
   // # Paddle positions
-  entities[1].velocity.y = state.gampad.dpad1.y * config.paddleMaxSpeed;
-  entities[2].velocity.y = state.gampad.dpad2.y * config.paddleMaxSpeed;
+  entities[1].velocity.y = controls.dpad1.y * config.paddleMaxSpeed;
+  entities[2].velocity.y = controls.dpad2.y * config.paddleMaxSpeed;
   entities[1].position.addTo(entities[1].velocity);
   entities[2].position.addTo(entities[2].velocity);
   if (entities[1].position.y < entities[1].height / 2) {
@@ -139,12 +129,34 @@ const update = (elapsedTime = 0) => {
   if (inersectPoint1) {
     ball.position.x = inersectPoint1.x + ball.r;
     ball.velocity.x = ball.velocity.x * -1 * config.hitForce;
-    ball.velocity.addTo(entities[1].velocity.multiply(.2));
+    ball.velocity.y = ball.velocity.y  + entities[1].velocity.y * config.paddleSpeedTransfer;
+    ball.position.addTo(ball.velocity);
+    return;
   }
   if (inersectPoint2) {
     ball.position.x = inersectPoint2.x - ball.r;
     ball.velocity.x = ball.velocity.x * -1 * config.hitForce;
-    ball.velocity.addTo(entities[2].velocity.multiply(.2));
+    ball.velocity.y = ball.velocity.y + entities[2].velocity.y * config.paddleSpeedTransfer;
+    ball.position.addTo(ball.velocity);
+    return;
+  }
+
+  // # Walls bouncing
+  // Slow down the ball when hit the wall
+  if(next.x > ctx.canvas.width - ball.r || next.x < ball.r) {
+    ball.position.x = (next.x < ball.r) ? ball.r : ctx.canvas.width - ball.r;
+    ball.velocity.x = ball.velocity.x * -.9;
+
+    if (next.x < ball.r) {
+      state.score[1]++;
+    } else {
+      state.score[0]++;
+    }
+    self.postMessage({ type: SCORE, score: state.score });
+  }
+  else if(next.y > ctx.canvas.height - ball.r || next.y < ball.r) {
+    ball.position.y = (next.y < ball.r) ? ball.r : ctx.canvas.height - ball.r;
+    ball.velocity.y = ball.velocity.y * -.9;
   }
 
   ball.position.addTo(ball.velocity);
@@ -167,9 +179,7 @@ self.addEventListener('message', (e) => {
       return init({ config: e.data.config, canvas: e.data.canvas });
     case PAUSE:
       return pause();
-    case 'change______':
-      state.gampad.dpad1 = e.data.dpad1;
-      state.gampad.dpad2 = e.data.dpad2;
-      return
+    case GAMEPAD_UPDATE:
+      return gamepadUpdate({ dpad1: e.data.dpad1, dpad2: e.data.dpad2 });
   }
 });
