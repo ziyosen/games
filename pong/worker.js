@@ -4,14 +4,13 @@ import { Ball, Box } from './entities.js';
 export const INIT = 'INIT';
 export const PAUSE = 'PAUSE';
 export const SCORE = 'SCORE';
-export const GAMEPAD_UPDATE = 'GAMEPAD_UPDATE';
-export const STATUS_UPDATE = 'STATUS_UPDATE';
+export const CONTROLS_UPDATE = 'CONTROLS_UPDATE';
 
 const config = {
   hitForce: 1.1, // force to speed up the ball when it hits the paddle
   wallFriction: .1, // friction to slow down the when it hits the wall
   paddleMaxSpeed: 10, // max speed of the paddle
-  paddleSpeedTransfer: .3, // percent of the paddle's speed transfered to the ball after a hit
+  paddleSpeedTransfer: .3, // percent of the paddle's speed transfered to the ball after a stroke
 }
 
 const state = {
@@ -54,10 +53,6 @@ const updateControls = ({ dpad1, dpad2 }) => {
   controls.dpad1.y = dpad1[1];
   controls.dpad2.x = dpad2[0];
   controls.dpad2.y = dpad2[1];
-}
-
-const updateStatus = ({ message }) => {
-  self.postMessage({ type: STATUS_UPDATE, message });
 }
 
 const updateGame = (elapsedTime = 0) => {
@@ -148,6 +143,7 @@ const updateGame = (elapsedTime = 0) => {
       state.score[0]++;
     }
     self.postMessage({ type: SCORE, score: state.score });
+    return serve({ player: (next.x < ball.r) ? 2 : 1 });
   }
   else if(next.y > ctx.canvas.height - ball.r || next.y < ball.r) {
     ball.position.y = (next.y < ball.r) ? ball.r : ctx.canvas.height - ball.r;
@@ -167,14 +163,32 @@ const render = (time) => {
   requestAnimationFrame(render);
 }
 
+const serve = ({ player }) => {
+  const max = 5;
+  const min = -5;
+  const velocityX = 7;
+  const velocityY = Math.random() * (max - min + 1) + min;
+  entities[0].position.x = entities[player].position.x;
+  entities[0].position.y = entities[player].position.y;
+  entities[0].position.x += (player === 2) ? -entities[0].r * 2 : entities[0].r * 2;
+  entities[0].velocity.x = 0;
+  entities[0].velocity.y = 0;
+  setTimeout(() => {
+    entities[0].velocity.x = (player === 2) ? -velocityX : velocityX;
+    entities[0].velocity.y = velocityY;
+  }, 500);
+}
+
 const init = ({ canvas }) => {
   state.ctx = canvas.getContext("2d");
   state.ctx.imageSmoothingEnabled = false;
+  state.isPaused = true;
 
-  entities[0] = Ball.create({ position: Vector.create(500, 200), velocity: Vector.create(5, 2), r: 10 });
+  entities[0] = Ball.create({ position: Vector.create(700, 400), r: 10 });
   entities[1] = Box.create({ position: Vector.create(20, 400), width: 20, height: 100 });
   entities[2] = Box.create({ position: Vector.create(1380, 400), width: 20, height: 100 });
 
+  serve({ player: 1 })
   requestAnimationFrame(render);
 }
 
@@ -184,9 +198,7 @@ self.addEventListener('message', (e) => {
       return init({ config: e.data.config, canvas: e.data.canvas });
     case PAUSE:
       return pause();
-    case GAMEPAD_UPDATE:
+    case CONTROLS_UPDATE:
       return updateControls({ dpad1: e.data.dpad1, dpad2: e.data.dpad2 });
-    case STATUS_UPDATE:
-      return updateStatus({ message: e.data.message });
   }
 });

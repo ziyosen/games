@@ -1,10 +1,8 @@
-import { GAMEPAD_UPDATE, STATUS_UPDATE } from './worker.js';
-
 export default class Gamepad {
   dpad1 = [0, 0];
   dpad2 = [0, 0];
 
-  init(worker) {
+  init() {
     const scanGamepadsState = () => {
       const gamepads = navigator.getGamepads();
       const { dpad1, dpad2 } = this;
@@ -35,45 +33,56 @@ export default class Gamepad {
         }
       }
 
-      worker.postMessage({ type: GAMEPAD_UPDATE, dpad1, dpad2 });
+      const event = new CustomEvent('gamepadupdated', { detail: { dpad1, dpad2 }});
+      dispatchEvent(event);
       requestAnimationFrame(scanGamepadsState);
     };
 
-    scanGamepadsState();
-
-    window.addEventListener("gamepadconnected", () => {
-      worker.postMessage({ type: STATUS_UPDATE, message: 'Gamepad connected' });
-    });
-
-    window.addEventListener("gamepaddisconnected", () => {
-      worker.postMessage({ type: STATUS_UPDATE, message: 'Gamepad disconnected' });
-    });
-
     window.addEventListener('keydown', (e) => {
-      if (e.key == 'd') this.dpad1[0] = 1;
-      if (e.key == 'a') this.dpad1[0] = -1;
-      if (e.key == 'w') this.dpad1[1] = -1;
-      if (e.key == 's') this.dpad1[1] = 1;
-      if (e.key == 'ArrowRight') this.dpad2[0] = 1;
-      if (e.key == 'ArrowLeft') this.dpad2[0] = -1;
-      if (e.key == 'ArrowUp') this.dpad2[1] = -1;
-      if (e.key == 'ArrowDown') this.dpad2[1] = 1;
+      const { dpad1, dpad2 } = this;
+      if (e.key == 'd') dpad1[0] = 1;
+      if (e.key == 'a') dpad1[0] = -1;
+      if (e.key == 'w') dpad1[1] = -1;
+      if (e.key == 's') dpad1[1] = 1;
+      if (e.key == 'ArrowRight') dpad2[0] = 1;
+      if (e.key == 'ArrowLeft') dpad2[0] = -1;
+      if (e.key == 'ArrowUp') dpad2[1] = -1;
+      if (e.key == 'ArrowDown') dpad2[1] = 1;
     }, false);
     window.addEventListener('keyup', (e) => {
-      if (e.key == 'd') this.dpad1[0] = 0;
-      if (e.key == 'a') this.dpad1[0] = 0;
-      if (e.key == 'w') this.dpad1[1] = 0;
-      if (e.key == 's') this.dpad1[1] = 0;
-      if (e.key == 'ArrowRight') this.dpad2[0] = 0;
-      if (e.key == 'ArrowLeft') this.dpad2[0] = 0;
-      if (e.key == 'ArrowUp') this.dpad2[1] = 0;
-      if (e.key == 'ArrowDown') this.dpad2[1] = 0;
+      const { dpad1, dpad2 } = this;
+      if (e.key == 'd') dpad1[0] = 0;
+      if (e.key == 'a') dpad1[0] = 0;
+      if (e.key == 'w') dpad1[1] = 0;
+      if (e.key == 's') dpad1[1] = 0;
+      if (e.key == 'ArrowRight') dpad2[0] = 0;
+      if (e.key == 'ArrowLeft') dpad2[0] = 0;
+      if (e.key == 'ArrowUp') dpad2[1] = 0;
+      if (e.key == 'ArrowDown') dpad2[1] = 0;
     }, false);
+
+    // let cy = 0;
+    // window.addEventListener('touchstart', (e) => {
+    //   // console.log(e.touches[0].clientX, e.touches[1]);
+    //   cy = e.touches[0].clientY;
+    // }, false);
+    // window.addEventListener('touchend', (e) => {
+    //   const { dpad1, dpad2 } = this;
+    //   dpad2[1] = 0;
+    // }, false);
+    // // el.addEventListener('touchcancel', handleCancel, false);
+    // window.addEventListener('touchmove', (e) => {
+    //   const { dpad1, dpad2 } = this;
+    //   const dy = cy - e.targetTouches[0].clientY;
+    //   dpad2[1] = dy / 170 * -1;
+    // }, false);
+
+    scanGamepadsState();
   }
 
-  static create(worker) {
+  static create() {
     const gamepad = new Gamepad();
-    gamepad.init(worker);
+    gamepad.init();
     return gamepad;
   }
 }
