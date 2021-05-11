@@ -16,7 +16,8 @@ const config = {
 const state = {
   ctx: null,
   score: [0, 0],
-  isPaused: false,
+  serving: null,
+  paused: false,
 }
 
 const entities = [];
@@ -27,6 +28,7 @@ const controls = {
 };
 
 const debug = () => {
+  const { ctx } = state;
   ctx.beginPath();
   entities.forEach(target => {
     const rect = target.getRect();
@@ -40,12 +42,12 @@ const debug = () => {
 }
 
 const pause = () => {
-  if (state.isPaused) {
-    state.isPaused = false;
+  if (state.paused) {
+    state.paused = false;
   } else {
-    state.isPaused = true;
+    state.paused = true;
   }
-  self.postMessage({ type: PAUSE, isPaused: state.isPaused });
+  self.postMessage({ type: PAUSE, isPaused: state.paused });
 }
 
 const updateControls = ({ dpad1, dpad2 }) => {
@@ -56,6 +58,26 @@ const updateControls = ({ dpad1, dpad2 }) => {
 }
 
 const updateGame = (elapsedTime = 0) => {
+  // # Skip if paused
+  if (state.paused) return;
+
+  // # Following the paddle when serving
+  if (state.serving) {
+    entities[1].velocity.y = controls.dpad1.y * config.paddleMaxSpeed;
+    entities[2].velocity.y = controls.dpad2.y * config.paddleMaxSpeed;
+    entities[1].position.addTo(entities[1].velocity);
+    entities[2].position.addTo(entities[2].velocity);
+    if (state.serving === 1) { // follow player 1 (left) paddle
+      entities[0].position.x = entities[1].position.x + entities[0].r * 2;
+      entities[0].position.y = entities[1].position.y;
+    }
+    if (state.serving === 2) { // follow player 2 (right) paddle
+      entities[0].position.x = entities[2].position.x - entities[0].r * 2;
+      entities[0].position.y = entities[2].position.y;
+    }
+    return;
+  }
+
   const ctx = state.ctx;
   const ball = entities[0];
   const next = ball.position.add(ball.velocity);
@@ -168,14 +190,12 @@ const serve = ({ player }) => {
   const min = -5;
   const velocityX = 7;
   const velocityY = Math.random() * (max - min + 1) + min;
-  entities[0].position.x = entities[player].position.x;
-  entities[0].position.y = entities[player].position.y;
-  entities[0].position.x += (player === 2) ? -entities[0].r * 2 : entities[0].r * 2;
-  entities[0].velocity.x = 0;
-  entities[0].velocity.y = 0;
+  state.serving = player;
+
   setTimeout(() => {
     entities[0].velocity.x = (player === 2) ? -velocityX : velocityX;
     entities[0].velocity.y = velocityY;
+    state.serving = null;
   }, 500);
 }
 

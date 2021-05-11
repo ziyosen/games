@@ -159,6 +159,12 @@
       }
     });
 
+    window.addEventListener('keypress', (e) => {
+      if (e.code === 'Space') {
+        worker.postMessage({ type: PAUSE });
+      }
+    });
+
     // if (window.screen.orientation.lock) {
     //   window.screen.orientation.lock('landscape')
     //     .catch(e => console.warn(e));
