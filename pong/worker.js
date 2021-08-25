@@ -7,7 +7,8 @@ export const SCORE = 'SCORE';
 export const CONTROLS_UPDATE = 'CONTROLS_UPDATE';
 
 const config = {
-  initialSpeed: 7, // the ball's speed after serving
+  initialSpeed: 15, // the ball's speed after serving
+  maxSpeed: 30, // the ball's max speed
   hitForce: 1.05, // force to speed up the ball when it hits the paddle
   wallFriction: .1, // friction to slow down the when it hits the wall
   paddleMaxSpeed: 10, // max speed of the paddle
@@ -161,6 +162,10 @@ const updateGame = (elapsedTime = 0) => {
     ball.velocity.y = ball.velocity.y + entities[2].velocity.y * config.paddleSpeedTransfer;
     ball.position.addTo(ball.velocity);
     return;
+  }
+
+  if (ball.velocity.length > config.maxSpeed) {
+    ball.velocity.length = config.maxSpeed;
   }
 
   // # Walls bouncing
