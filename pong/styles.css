@@ -22,7 +22,7 @@ canvas {
   outline: 1px solid #fff;
   background-image:
     repeating-linear-gradient(0deg, #fffa, #fffa 1%, transparent 1%, transparent 2%);
-  background-size: min(1%, 5px) min(100%, 100%);
+  background-size: min(1%, 5px) min(80%, 80%);
   background-repeat: no-repeat;
   background-position: center;
 }
