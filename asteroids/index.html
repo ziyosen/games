@@ -34,6 +34,7 @@
       uniform float u_MaxTheta;
       uniform float u_MinSpeed;
       uniform float u_MaxSpeed;
+      uniform int u_Loop;
 
       in vec2 i_Position;
       in float i_Age;
@@ -46,7 +47,7 @@
       out vec2 v_Velocity;
 
       void main() {
-        if (i_Age >= i_Life) {
+        if (i_Age >= i_Life && u_Loop > 0) {
           ivec2 noise_coord = ivec2(gl_VertexID % 512, gl_VertexID / 512);
           vec2 rand = texelFetch(u_RgNoise, noise_coord, 0).rg;
           float theta = u_MinTheta + rand.r*(u_MaxTheta - u_MinTheta);
@@ -472,6 +473,9 @@ function init(
   gl.uniform1i(
     gl.getUniformLocation(state.particle_update_program, "u_RgNoise"),
     0);
+  gl.uniform1i(
+    gl.getUniformLocation(state.particle_update_program, "u_Loop"),
+    state.loop);
 
   /* Bind the "read" buffer - it contains the state of the particle system
     "as of now".*/
@@ -509,9 +513,20 @@ function init(
 
   // console.log(Math.floor(player.velocity.length * 100000) )
   // player.position.angle = player.position.angle + .001;
+  let old_v = player.velocity.length;
   player.velocity.length += gamepad.dpad1[1] * -1 * 0.0001;
   player.velocity.angle += gamepad.dpad1[0] * -1 * 0.05;
   player.position.addTo(player.velocity);
+
+  if (player.velocity.length < 0.00001) {
+    player.velocity.length = 0.00001;
+  }
+  console.log(player.velocity.length);
+  if (player.velocity.length > 0.0001 && !state.loop) {
+    state.loop = 1;
+  } else {
+    state.loop = 0;
+  }
 
   state.min_theta = player.velocity.angle - Math.PI - 0.5;
   state.max_theta = player.velocity.angle - Math.PI + 0.5;
@@ -527,9 +542,9 @@ function init(
 var state =
       init(
         gl,
-        1000, /* number of particles */
-        0.5, /* birth rate */
-        1.01, 1.1, /* life range */
+        10000, /* number of particles */
+        10, /* birth rate */
+        1.01, 10, /* life range */
         Math.PI/2.0 - 0.5, Math.PI/2.0 + 0.5, /* direction range */
         0.001, 1, /* speed range */
         [0.0, 0.0]); /* gravity */
@@ -556,46 +571,6 @@ var state =
     // gl.clear(gl.COLOR_BUFFER_BIT);
     // gl.useProgram(program);
     // gl.drawArrays(gl.POINTS, 0, 1);
-
-    // const Node = { x: null, y: null, neighbours: null }
-    // const create = (x, y) => Object.assign(Object.create(Node), { x, y });
-
-    // const graph = create(10,10);
-    // graph.neighbours = [ create(9,11),  create(10,12), create(12, 11), create(12, 13) ];
-    // graph.neighbours[0].neighbours = [ create(9,13) ];
-
-    // const draw = node => {
-    //   const a = 2 * Math.PI / 6;
-    //   const r = 10;
-    //   const x = node.x * 2 * r;
-    //   const y = node.y * 2 * r;
-
-
-    //   ctx.beginPath();
-    //   ctx.arc(x, y, r, 0, Math.PI * 2);
-    //   ctx.strokeStyle = "#0005";
-    //   ctx.stroke();
-    //   ctx.closePath();
-    // }
-
-    // let stack = [ graph ];
-    // while (stack.length) {
-    //   const node = stack.pop();
-    //   draw(node);
-    //   console.log(node);
-    //   if (node.neighbours) {
-    //     node.neighbours.forEach(n => {
-    //       ctx.beginPath();
-    //       ctx.moveTo(node.x * 20, node.y * 20);
-    //       ctx.strokeStyle = "#0005";
-    //       ctx.lineTo(n.x * 20, n.y * 20);
-    //       ctx.stroke();
-    //       ctx.closePath();
-    //     });
-
-    //     stack.push(...node.neighbours);
-    //   }
-    // }
   </script>
 
 </body>
