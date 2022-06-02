@@ -25,6 +25,7 @@ canvas {
   background-size: min(1%, 5px) min(80%, 80%);
   background-repeat: no-repeat;
   background-position: center;
+  width: 100%;
 }
 
 .container {
