@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="./favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Games: Shoot'em'all</title>
+</head>
+<body>
+  <canvas width="800" height="600"></canvas>
+
+  <script type="module">
+    import Vector from './vector.js';
+    import { Particle, Ray, Boundary } from './entities/index.js';
+    import Gamepad from './gamepad.js';
+
+    const gamepad = Gamepad.create();
+
+    const canvas = document.querySelector('canvas');
+    const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
+
+    // const Player = (x = 0, y = 0, dpad = null) => {
+    //   const acceleration = Vector.create(0, 0);
+    //   const entity = Box.create({ position: Vector.create(x, y), width: 20, height: 20 });
+    //   const update = () => {
+    //     if (dpad) {
+    //       acceleration.x = dpad[0] * .1;
+    //       acceleration.y = dpad[1] * .1;
+    //     }
+    //     if (entity.position.x > ctx.canvas.width  || entity.position.x < 0) {
+    //       entity.velocity.x = entity.velocity.x * -.9;
+    //     }
+    //     entity.velocity.addTo(acceleration);
+    //     entity.position.addTo(entity.velocity);
+    //   }
+    //   const render = () => entity.render(ctx);
+    //   const debug = () => {
+    //     const rect = entity.getRect();
+    //     ctx.beginPath();
+    //     ctx.fillStyle = 'rgba(250, 250, 0, 0.9)';
+    //     ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+    //     ctx.moveTo(entity.position.x, entity.position.y);
+    //     ctx.lineTo(entity.position.x + entity.velocity.x * 10, entity.position.y + entity.velocity.y * 10);
+    //     ctx.stroke();
+    //     ctx.closePath();
+    //   }
+    //   return { update, render, debug }
+    // }
+
+    const entities = [];
+    // entities[0] = Player(150,100, gamepad.dpad1);
+    // entities[1] = Player(100,100, gamepad.dpad2);
+    entities[0] = Particle.create({ position: Vector.create(130, 100), r: 10 });
+    // entities[1] = Particle.create({ position: Vector.create(30, 100), r: 15 });
+    // entities[2] = Particle.create({ position: Vector.create(230, 100), r: 20 });
+
+    const rays = [];
+    for (let i = 0; i <= 23; i++) {
+      rays[i] = Ray.create();
+      rays[i].position = entities[0].position;
+    }
+
+    const boundaries = [];
+    boundaries[0] = Boundary.create({ a: Vector.create(500, 50), b: Vector.create(500, 400) });
+    boundaries[5] = Boundary.create({ a: Vector.create(350, 150), b: Vector.create(350, 500) });
+
+    boundaries[1] = Boundary.create({ a: Vector.create(10, 10), b: Vector.create(790, 10) });
+    boundaries[2] = Boundary.create({ a: Vector.create(790, 10), b: Vector.create(790, 590) });
+    boundaries[3] = Boundary.create({ a: Vector.create(10, 590), b: Vector.create(790, 590) });
+    boundaries[4] = Boundary.create({ a: Vector.create(10, 10), b: Vector.create(10, 590) });
+
+    const render = (time) => {
+      // ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      ctx.fillStyle = 'rgba(44, 62, 80, 1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      boundaries.forEach(boundary => {
+        boundary.render(ctx);
+      });
+
+      entities.forEach(entity => {
+        entity.velocity.addTo(Vector.create(gamepad.dpad1[0] * .05, gamepad.dpad1[1] * .05));
+        // entity.velocity.length -= .1;
+        // entity.position.addTo(Vector.create(gamepad.dpad1[0], gamepad.dpad1[1]));
+        entity.position.addTo(entity.velocity);
+      });
+      entities.forEach(entity => { entity.render(ctx) });
+      // entities.forEach(entity => { entity.debug() });
+
+      rays[0].pointAt(boundaries[0].a);
+      rays[1].pointAt(boundaries[0].b);
+
+      rays[2].direction.angle = rays[0].direction.angle + 0.00001;
+      rays[3].direction.angle = rays[0].direction.angle - 0.00001;
+
+      rays[4].direction.angle = rays[1].direction.angle + 0.00001;
+      rays[5].direction.angle = rays[1].direction.angle - 0.00001;
+
+      rays[6].pointAt(boundaries[4].a);
+      rays[7].direction.angle = rays[6].direction.angle + 0.00001;
+      rays[8].direction.angle = rays[6].direction.angle - 0.00001;
+
+      rays[9].pointAt(boundaries[4].b);
+      rays[10].direction.angle = rays[9].direction.angle + 0.00001;
+      rays[11].direction.angle = rays[9].direction.angle - 0.00001;
+
+      rays[12].pointAt(boundaries[3].b);
+      rays[13].direction.angle = rays[12].direction.angle + 0.00001;
+      rays[14].direction.angle = rays[12].direction.angle - 0.00001;
+
+      rays[15].pointAt(boundaries[2].a);
+      rays[16].direction.angle = rays[15].direction.angle + 0.00001;
+      rays[17].direction.angle = rays[15].direction.angle - 0.00001;
+
+      rays[18].pointAt(boundaries[5].a);
+      rays[19].direction.angle = rays[18].direction.angle + 0.00001;
+      rays[20].direction.angle = rays[18].direction.angle - 0.00001;
+
+      rays[21].pointAt(boundaries[5].b);
+      rays[22].direction.angle = rays[21].direction.angle + 0.00001;
+      rays[23].direction.angle = rays[21].direction.angle - 0.00001;
+
+      // ctx.beginPath();
+      // ctx.strokeStyle = 'rgba(255, 255, 255, .2)';
+      // rays.forEach(ray => {
+      //   ctx.moveTo(ray.position.x, ray.position.y);
+      //   ctx.lineTo(ray.position.x + ray.direction.x * 1000, ray.position.y + ray.direction.y * 1000);
+      // })
+      // ctx.stroke();
+
+      const pts = [];
+      rays.forEach(ray => {
+        let closestIntersect = null;
+        boundaries.forEach(boundary => {
+          const { point: pt, distance } = ray.cast(boundary) || {};
+          if (pt) {
+            // ctx.beginPath();
+            // ctx.arc(pt.x, pt.y, 5, 0, Math.PI*2);
+            // ctx.fillStyle = "#FFFFFF";
+            // ctx.fill();
+            // ctx.closePath();
+            if (!closestIntersect || distance < closestIntersect.distance) {
+              closestIntersect = { pt, distance }
+            }
+          }
+        });
+        if (closestIntersect) {
+          pts.push(closestIntersect.pt);
+        }
+      });
+
+      pts.sort((a, b) => {
+        return Math.atan2(b.y - entities[0].position.y, b.x - entities[0].position.x) - Math.atan2(a.y - entities[0].position.y, a.x - entities[0].position.x)
+      });
+
+      if (pts.length) {
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        pts.forEach(pt => {
+          ctx.lineTo(pt.x, pt.y);
+        });
+
+        const gradient = ctx.createRadialGradient(
+          entities[0].position.x, entities[0].position.y,
+          0,
+          entities[0].position.x, entities[0].position.y,
+          500
+          )
+        gradient.addColorStop(0, 'rgba(255, 255, 255, .4)');
+        gradient.addColorStop(1, 'rgba(255, 255, 255, .01)');
+        ctx.fillStyle = gradient; // 'rgba(255, 255, 255, .1)';
+        ctx.fill();
+      }
+
+      requestAnimationFrame(render);
+    }
+
+    requestAnimationFrame(render);
+  </script>
+
+</body>
+</html>
