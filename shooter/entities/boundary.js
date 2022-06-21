@@ -13,7 +13,7 @@ export class Boundary {
     ctx.beginPath();
     ctx.moveTo(this.a.x, this.a.y);
     ctx.lineTo(this.b.x, this.b.y);
-    ctx.strokeStyle = "#FFFFFF";
+    ctx.strokeStyle = "#999";
     ctx.stroke();
   }
 }

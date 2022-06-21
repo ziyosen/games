@@ -1,5 +1,6 @@
 import Vector from '../vector.js';
 
+export * from './scene.js';
 export * from './boundary.js';
 export * from './ray.js';
 
@@ -9,7 +10,7 @@ class Entity {
 }
 
 export class Particle extends Entity {
-  r = 0;
+  r = 10;
   render = (ctx) => {
     ctx.beginPath();
     ctx.arc(this.position.x, this.position.y, this.r, 0, Math.PI*2);
