@@ -9,7 +9,7 @@
         margin: 0; padding: 0;
       }
       canvas {
-        width: 100%;
+        width: 50%;
       }
     </style>
   </head>
@@ -17,7 +17,7 @@
     <script>
       // import {CRTFilter} from '@pixi/filter-crt';
       // Create the application helper and add its render target to the page
-      let app = new PIXI.Application({ width: 640, height: 360 });
+      let app = new PIXI.Application({ width: 640, height: 480 });
       app.renderer.backgroundColor = "0x02020F";
       document.body.appendChild(app.view);
 
@@ -26,10 +26,11 @@
       
       let sprite = PIXI.Sprite.from('sample.png');
       let position = 320.0;
-      sprite.y = 260.0;
+      sprite.x = position;
+      sprite.y = 400.0;
 
       sprite.anchor.set(0.5);
-      sprite.scale.set(0.5);
+      sprite.scale.set(0.3);
 
       // Create a master graphics object
       let template = new PIXI.Graphics();
@@ -91,7 +92,7 @@
       // spritesheet is ready to use!
       const anim = new PIXI.AnimatedSprite(spritesheet.animations.fire);
       anim.scale.set(.2);
-      anim.y = 325;
+      anim.y = 445;
       anim.rotation = Math.PI / 2;
       anim.anchor.set(0.5);
       // set the animation speed 
