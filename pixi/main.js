@@ -1,6 +1,6 @@
 import { controlsSetup } from './controls.js';
 import { createPlayer, updatePlayer } from "./player.js";
-import { createEnemyGroup, updateEnemies } from "./enemy.js";
+import { createEnemy, createEnemyGroup, updateEnemies } from "./enemy.js";
 import { updateBullets } from "./bullets.js";
 
  const init = async () => {
@@ -81,6 +81,60 @@ import { updateBullets } from "./bullets.js";
     }
   }
 
+  const atlasDataExplosion = {
+    frames: {
+      frame1: {
+        frame: { x: 0, y:100, w:130, h:130 },
+        sourceSize: { w: 130, h: 130 },
+        spriteSourceSize: { x: 0, y: 0, w: 130, h: 130 }
+      },
+      frame2: {
+        frame: { x: 130, y:100, w:130, h:130 },
+        sourceSize: { w: 130, h: 130 },
+        spriteSourceSize: { x: 0, y: 0, w: 130, h: 130 }
+      },
+      frame3: {
+        frame: { x: 260, y:100, w:130, h:130 },
+        sourceSize: { w: 130, h: 130 },
+        spriteSourceSize: { x: 0, y: 0, w: 130, h: 130 }
+      },
+      frame4: {
+        frame: { x: 390, y:100, w:130, h:130 },
+        sourceSize: { w: 130, h: 130 },
+        spriteSourceSize: { x: 0, y: 0, w: 130, h: 130 }
+      },
+      frame5: {
+        frame: { x: 520, y:100, w:120, h:130 },
+        sourceSize: { w: 130, h: 130 },
+        spriteSourceSize: { x: 0, y: 0, w: 130, h: 130 }
+      },
+      frame6: {
+        frame: { x: 0, y:230, w:130, h:130 },
+        sourceSize: { w: 130, h: 130 },
+        spriteSourceSize: { x: 0, y: 0, w: 130, h: 130 }
+      },
+      frame7: {
+        frame: { x: 130, y:230, w:130, h:130 },
+        sourceSize: { w: 130, h: 130 },
+        spriteSourceSize: { x: 0, y: 0, w: 130, h: 130 }
+      },
+      frame8: {
+        frame: { x: 260, y:230, w:130, h:130 },
+        sourceSize: { w: 130, h: 130 },
+        spriteSourceSize: { x: 0, y: 0, w: 130, h: 130 }
+      },
+    },
+    meta: {
+      image: 'assets/explosion.png',
+      format: 'RGBA8888',
+      size: { w: 640, h: 640 },
+      scale: 1
+    },
+    animations: {
+      explosion: ['frame1', 'frame2', 'frame3', 'frame4', 'frame5', 'frame6', 'frame7', 'frame8'],
+    }
+  }
+
   const spritesheetPlayer = new PIXI.Spritesheet(
     PIXI.BaseTexture.from(atlasData.meta.image),
     atlasData
@@ -91,13 +145,19 @@ import { updateBullets } from "./bullets.js";
     atlasDataShips
   );
 
+  const spritesheetExplosion = new PIXI.Spritesheet(
+    PIXI.BaseTexture.from(atlasDataExplosion.meta.image),
+    atlasDataExplosion
+  );
+
   await spritesheetPlayer.parse();
   await spritesheetEnemy.parse();
+  await spritesheetExplosion.parse();
 
   const player = createPlayer(spritesheetPlayer, 320.0, app.renderer.height - 120.0);
   app.stage.addChild(player);
 
-  const enemy = createEnemyGroup(spritesheetEnemy, 320.0, 100.0);
+  const enemy = createEnemy(spritesheetEnemy, 320.0, 100.0);
   app.stage.addChild(enemy);
 
   setInterval(() => {
@@ -107,13 +167,12 @@ import { updateBullets } from "./bullets.js";
   
   const controls = controlsSetup(app);
   app.stage.addChild(controls.view);
-
-  loop(app);
+  loop(app, spritesheetExplosion);
   
   return app;
  }
 
- const loop = (app) => {
+ const loop = (app, spritesheetExplosion) => {
   const stars = [];
   const speeds = [];
   const template = new PIXI.Graphics();
@@ -152,7 +211,7 @@ import { updateBullets } from "./bullets.js";
     }
 
     updatePlayer(app, elapsed, delta);
-    updateEnemies(app, elapsed, delta);
+    updateEnemies(app, elapsed, delta, spritesheetExplosion);
     updateBullets(app, elapsed, delta);
   });
  }

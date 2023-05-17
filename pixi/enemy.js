@@ -9,6 +9,19 @@ template.beginFill(0xFF9000);
 template.drawRect(0, 0, hitArea.width, hitArea.height);
 template.endFill();
 
+const createExplosion = (spritesheet, x, y) => {
+  const sprite = new PIXI.AnimatedSprite(spritesheet.animations.explosion);
+  sprite.anchor.set(0.5);
+  sprite.animationSpeed = 0.4;
+  sprite.loop = false;
+  sprite.x = x;
+  sprite.y = y;
+  sprite.onComplete = () => {
+    sprite.visible = false;
+  }
+  return sprite;
+}
+
 export const createEnemy = (spritesheet, x, y) => {
   const enemy = enemies.find(enemy => !enemy.visible);
   if (enemy) {
@@ -32,10 +45,6 @@ export const createEnemy = (spritesheet, x, y) => {
   container.x = x
   container.y = y;
 
-  // const c = new PIXI.Graphics(template.geometry);
-  // c.x = hitArea.x;
-  // c.y = hitArea.y;
-  // container.addChild(c);
   enemies.push(container);
   return container;
 }
@@ -48,7 +57,7 @@ export const createEnemyGroup = (spritesheet, x, y) => {
   return container;
 }
 
-export const updateEnemies = (app, elapsed, delta) => {
+export const updateEnemies = (app, elapsed, delta, spritesheetExplosion) => {
   enemies.filter(enemy => enemy.visible).forEach(container => {
     if (!container) return;
     container.y += speed * delta;
@@ -59,6 +68,9 @@ export const updateEnemies = (app, elapsed, delta) => {
     if (intersectBullet) {
       container.visible = false;
       intersectBullet.visible = false;
+      const sprite = createExplosion(spritesheetExplosion, intersectBullet.x, intersectBullet.y);
+      sprite.play();
+      app.stage.addChild(sprite);
     }
   })
 }
